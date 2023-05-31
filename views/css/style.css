@@ -84,13 +84,9 @@ div.navigation.files > .title > span {
     font-weight: 700;
 }
 
-div.navigation.files > div.locations > div.object {
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
+div.navigation.files > div.locations > div.object.create, div.navigation.files > div.locations > div.object.info {
+    border-top: 2px solid var(--border-color);
 }
-
-div.navigation.files > div.locations > div.object:first-child { border-top: none; }
-div.navigation.files > div.locations > div.object:last-child { border-bottom: none; }
 
 body.file-layout > div.primary-panel {
     grid-area: primary-panel;
@@ -233,8 +229,9 @@ tr.object > td.name > a:hover {
 
 div.object.folder, tr.object.folder > td.name { background-image: url(/s/views/svg/folder.svg); background-size: 24px 24px; background-position: 10px 8px; background-repeat: no-repeat; font-weight: 500; }
 div.object.file, tr.object.file > td.name { background-image: url(/s/views/svg/file.svg); background-size: 24px 24px; background-position: 10px 8px; background-repeat: no-repeat; }
-div.object.link, tr.object.link > td.name { background-image: url(/s/views/svg/button-new-tab.svg); background-size: 24px 24px; background-position: 10px 8px; background-repeat: no-repeat; }
+div.object.link, tr.object.link > td.name { background-image: url(/s/views/svg/button-new-tab.svg); background-size: 24px 24px; background-position: 9px 8px; background-repeat: no-repeat; }
 div.object.create, tr.object.create > td.name { background-image: url(/s/views/svg/create.svg); background-size: 24px 24px; background-position: 10px 8px; background-repeat: no-repeat; }
+div.object.cloud, tr.object.cloud > td.name { background-image: url(/s/views/svg/icon-cloud.svg); background-size: 22px 22px; background-position: 12px 8px; background-repeat: no-repeat; }
 
 div.object.file.db, tr.object.file.db > td.name { background-image: url(/s/views/svg/file-database.svg); }
 div.object.file.py, tr.object.file.py > td.name { background-image: url(/s/views/svg/file-python.svg); }
@@ -257,6 +254,12 @@ div.button > svg { width: 20px; height: 20px;  }
 div.button > svg > path { stroke: var(--border-color) !important; }
 
 div.button:hover { cursor: pointer; }
+
+div.object.info:hover {
+    cursor: default;
+    background-color: var(--background-color);
+    color: #545454 !important;
+}
 
 tr:hover > td > div.button, tr.selected > td > div.button { padding: 4px 6px; margin: 0 3px; background-color: var(--border-color) !important; display: inline-block; border-radius: 6px; }
 tr:hover > td > div.button > svg, tr.selected > td > div.button > svg { width: 20px; height: 20px; background-color: var(--border-color) !important; }
@@ -304,6 +307,10 @@ input, select, textarea, button, div.file_input {
     box-sizing: border-box;
     height: 40px;
     min-width: 100%;
+}
+
+button {
+    min-width: initial;
 }
 
 select {
@@ -380,6 +387,10 @@ input[type='submit']:active, button:active {
     transform: translateY(1px);
 }
 
+input[type='submit']:hover {
+    cursor: pointer;
+}
+
 button.submit {
     padding: 0.3em 1em;
 }
@@ -438,7 +449,24 @@ div.pop-up {
     box-shadow: 0 0 10px black;
 }
 
-div.pop-up input, div.pop-up select {
+div.pop-up.atypical {
+    transform: none;
+}
+
+div.context-menu {
+    display: none;
+    flex-flow: column;
+    padding: 10px 0;
+    gap: 0;
+}
+
+div.context-menu > button {
+    border-radius: 0;
+    padding: 0.2em 1em;
+    height: 30px;
+}
+
+div.pop-up input, div.pop-up select, div.pop-up textarea {
     background-color: #2c2c2c;
 }
 

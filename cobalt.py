@@ -1,7 +1,7 @@
 from astatine import Astatine, AstatineJSON, AstatineAES, AstatineSMTP
 from bottle import template, request, abort, redirect
 from datetime import datetime
-import os, filetype
+import os, filetype, shutil
 
 
 class Cobalt(object):
@@ -29,10 +29,14 @@ class Cobalt(object):
 
     def create_routes(self):
         self.astatine.route('/', 'get', self.index, True)
+        self.astatine.route('/links', 'get', self.links, True)
+        self.astatine.route('/notes', 'get', self.notes, True)
+        self.astatine.route('/notes/<uid>', 'get', self.notes, True)
         self.astatine.route('/root', 'get', self.root, True)
         self.astatine.route('/root/<path:path>', 'get', self.root, True)
         self.astatine.route('/create/folder/<path:path>', 'post', self.create_folder, True)
         self.astatine.route('/create/location', 'post', self.create_location, True)
+        self.astatine.route('/create/hyperlink', 'post', self.create_hyperlink, True)
 
         self.astatine.error([404, 403], self.errors)
 
@@ -54,7 +58,29 @@ class Cobalt(object):
     def index(self, session):
         pass
 
+    def links(self, session):
+        links = self.astatine.execute_sql('SELECT * FROM hyperlinks')
+        locations = self.astatine.execute_sql('SELECT * FROM locations ORDER BY location_order ASC')
+        location_types = self.astatine.execute_sql('SELECT * FROM location_types')
+        total, used, free = shutil.disk_usage("/")
+        si = [total, used, free]
+        return template('html/links.tpl', session=session, links=links, locations=locations, location_types=location_types, path='/links/', si=si)
+
+    def notes(self, session, uid=None):
+        notes = self.astatine.execute_sql('SELECT * FROM notes ORDER BY date_time DESC')
+        note_content = None
+        locations = self.astatine.execute_sql('SELECT * FROM locations ORDER BY location_order ASC')
+        location_types = self.astatine.execute_sql('SELECT * FROM location_types')
+        total, used, free = shutil.disk_usage("/")
+        si = [total, used, free]
+        if uid:
+            note_content = self.astatine.execute_sql('SELECT * FROM notes WHERE uid = ?', (uid,))
+        return template('html/notes.tpl', session=session, notes=notes, locations=locations, location_types=location_types, path='/notes/', si=si, note_content=note_content)
+
     def root(self, session, path=None):
+        total, used, free = shutil.disk_usage("/")
+        si = [total, used, free]
+
         dirs, files = [], []
         file_content, image_content, video_content = None, None, None
         is_image, is_file, is_video = False, False, False
@@ -93,11 +119,12 @@ class Cobalt(object):
             abort(404)
 
         locations = self.astatine.execute_sql('SELECT * FROM locations ORDER BY location_order ASC')
+        location_types = self.astatine.execute_sql('SELECT * FROM location_types')
 
         if not is_image and not is_file and not is_video:
-            return template('html/index.tpl', session=session, dirs=dirs, files=files, path=path, nav_path=nav_path, locations=locations)
+            return template('html/index.tpl', session=session, dirs=dirs, files=files, path=path, nav_path=nav_path, locations=locations, location_types=location_types, si=si)
         else:
-            return template('html/file.tpl', session=session, file_content=file_content, image_content=image_content, video_content=video_content, is_video=is_video, is_file=is_file, is_image=is_image, path=path, nav_path=nav_path, locations=locations)
+            return template('html/file.tpl', session=session, file_content=file_content, image_content=image_content, video_content=video_content, is_video=is_video, is_file=is_file, is_image=is_image, path=path, nav_path=nav_path, locations=locations, location_types=location_types, si=si)
 
     def create_folder(self, session, path):
         folder_name = request.forms.get('name')
@@ -105,11 +132,21 @@ class Cobalt(object):
         redirect(path)
 
     def create_location(self, session):
-        url = request.forms.get('location-url')
-        name = request.forms.get('location-name')
-        type = request.forms.get('location-type')
-        next_order = self.astatine.execute_sql('SELECT location_order FROM locations ORDER BY location_order DESC LIMIT 1')[0][0]
-        self.astatine.execute_sql('INSERT INTO locations (uid, path, name, location_order, location_type) VALUES (?,?,?,?,?)', (self.astatine.generate_uid('locations', 'uid'), url, name, next_order, type))
+        url = request.forms.get('url')
+        name = request.forms.get('name')
+        location_type = request.forms.get('location-type')
+        next_order = self.astatine.execute_sql('SELECT location_order FROM locations ORDER BY location_order DESC LIMIT 1')
+        if next_order:
+            for n in next_order:
+                next_order = n[0] + 1
+        else:
+            next_order = 1
+        self.astatine.execute_sql('INSERT INTO locations (uid, path, name, location_order, location_type) VALUES (?,?,?,?,?)', (self.astatine.generate_uid('locations', 'uid'), url, name, next_order, location_type))
+
+    def create_hyperlink(self, session):
+        url = request.forms.get('url')
+        self.astatine.execute_sql('INSERT INTO hyperlinks (uid, link) VALUES (?,?)', (self.astatine.generate_uid('locations', 'uid'), url))
+        redirect('/links')
 
 
 if __name__ == '__main__':
